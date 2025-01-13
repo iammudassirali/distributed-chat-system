@@ -1,29 +1,34 @@
 from pymongo import MongoClient
-from datetime import datetime
+import logging
 
-# Connect to MongoDB
-client = MongoClient('mongodb://localhost:27017/')
-db = client['chat_system']
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# MongoDB connection setup
+client = MongoClient('mongodb://database-service:27017/')
+db = client['chat_database']
 messages_collection = db['messages']
 
-# Function to store a message in MongoDB
-def store_message(user_id, message, room_id):
-    message_data = {
-        "user_id": user_id,
-        "message": message,
-        "timestamp": datetime.utcnow(),
-        "room_id": room_id
-    }
-    messages_collection.insert_one(message_data)
-    print(f"Stored message: {message}")
+def save_message_to_db(message):
+    try:
+        message_data = {
+            'message': message,
+            'timestamp': datetime.utcnow()
+        }
+        messages_collection.insert_one(message_data)
+        logger.info(f"Message saved to database: {message}")
+    except Exception as e:
+        logger.error(f"Failed to save message to database: {str(e)}")
 
-# Store a sample message
-store_message("user123", "Hello, world!", "room1")
+def get_all_messages():
+    try:
+        messages = messages_collection.find()
+        return list(messages)
+    except Exception as e:
+        logger.error(f"Failed to retrieve messages from database: {str(e)}")
+        return []
 
-def get_messages(room_id):
-    messages = messages_collection.find({"room_id": room_id}).sort("timestamp", 1)
-    for message in messages:
-        print(message)
-        
-# Retrieve messages from a specific room
-get_messages("room1")
+# Example usage
+message = "Test message"
+save_message_to_db(message)

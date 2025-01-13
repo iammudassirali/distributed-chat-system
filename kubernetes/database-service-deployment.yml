@@ -4,7 +4,7 @@ metadata:
   name: database-service
   namespace: chat-system
 spec:
-  replicas: 3
+  replicas: 1  # MongoDB replica set will handle scaling
   selector:
     matchLabels:
       app: database-service
@@ -14,13 +14,18 @@ spec:
         app: database-service
     spec:
       containers:
-      - name: database-service
-        image: database-service  # Replace with the actual Docker image name
-        ports:
-          - containerPort: 27017  # Default MongoDB port (adjust if necessary)
-        env:
-          - name: RABBITMQ_HOST
-            value: "rabbitmq"  # Connect to RabbitMQ service
+        - name: database-service
+          image: mongo:latest  # Official MongoDB image
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d
+              name: init-scripts
+              readOnly: true
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: init-mongo-scripts
 ---
 apiVersion: v1
 kind: Service
@@ -32,6 +37,6 @@ spec:
     app: database-service
   ports:
     - protocol: TCP
-      port: 27017  # Default MongoDB port
+      port: 27017
       targetPort: 27017
   type: ClusterIP

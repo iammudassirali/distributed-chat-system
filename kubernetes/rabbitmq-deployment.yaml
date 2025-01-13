@@ -1,3 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: chat-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: bitnami/rabbitmq:latest
+          ports:
+            - containerPort: 5672
+              name: amqp-port  # Name for AMQP port
+            - containerPort: 15672
+              name: management-port  # Name for Management UI port
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              value: "user"
+            - name: RABBITMQ_DEFAULT_PASS
+              value: "password"
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -7,13 +36,12 @@ spec:
   selector:
     app: rabbitmq
   ports:
-    - name: amqp
-      protocol: TCP
+    - protocol: TCP
       port: 5672
       targetPort: 5672
-    - name: management
-      protocol: TCP
+      name: amqp-port  # Name for AMQP port
+    - protocol: TCP
       port: 15672
       targetPort: 15672
-      nodePort: 30001  # Expose RabbitMQ management UI on port 30001
-  type: NodePort
+      name: management-port  # Name for Management UI port
+  type: ClusterIP

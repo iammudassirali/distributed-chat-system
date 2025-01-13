@@ -1,20 +1,45 @@
 import pika
-import json
+from pymongo import MongoClient
+import logging
 
-# Function to handle the incoming message
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# MongoDB connection setup
+client = MongoClient('mongodb://database-service:27017/')
+db = client['chat_database']
+messages_collection = db['messages']
+
+def save_message_to_db(message):
+    try:
+        message_data = {
+            'message': message,
+            'timestamp': datetime.utcnow()
+        }
+        messages_collection.insert_one(message_data)
+        logger.info(f"Message saved to database: {message}")
+    except Exception as e:
+        logger.error(f"Failed to save message to database: {str(e)}")
+
 def callback(ch, method, properties, body):
-    message_data = json.loads(body)
-    print(f" [x] Received: {message_data['message']} from user {message_data['user_id']} in room {message_data['room_id']}")
+    message = body.decode()
+    logger.info(f" [x] Received {message}")
+    save_message_to_db(message)  # Save message to MongoDB
 
-# Set up the connection to RabbitMQ
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-channel = connection.channel()
+def consume_messages_from_rabbitmq():
+    # Set up RabbitMQ consumer
+    connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+    channel = connection.channel()
 
-# Declare the same queue where messages are sent
-channel.queue_declare(queue='chat_queue')
+    # Declare the queue
+    channel.queue_declare(queue='message_queue', durable=True)
 
-# Set up the consumer to listen to messages
-channel.basic_consume(queue='chat_queue', on_message_callback=callback, auto_ack=True)
+    # Consume messages from the queue
+    channel.basic_consume(queue='message_queue', on_message_callback=callback, auto_ack=True)
 
-print(' [*] Waiting for messages. To exit press CTRL+C')
-channel.start_consuming()
+    logger.info(' [*] Waiting for messages. To exit press CTRL+C')
+    channel.start_consuming()
+
+# Start consuming messages
+consume_messages_from_rabbitmq()
