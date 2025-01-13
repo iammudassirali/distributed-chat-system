@@ -1,15 +1,33 @@
-version: '3'
+version: '3.8'
 services:
-  message-service:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile-message-service
-    depends_on:
-      - rabbitmq
-    ports:
-      - "5000:5000"
   rabbitmq:
-    image: bitnami/rabbitmq
+    image: bitnami/rabbitmq:latest
+    container_name: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"  # AMQP port
+      - "15672:15672"  # Management UI port
+
+  database-service:
+    image: mongo:latest
+    container_name: database-service
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    ports:
+      - "27017:27017"  # MongoDB port
+
+  message-service:
+    build: ./src/message-service  # Path to your message-service Dockerfile
+    container_name: message-service
+    ports:
+      - "5000:5000"  # Assuming it listens on port 5000
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+
+  user-service:
+    build: ./src/user-service  # Path to your user-service Dockerfile
+    container_name: user-service
+    ports:
+      - "5001:5001"  # Assuming it listens on port 5000
+    environment:
+      - RABBITMQ_HOST=rabbitmq

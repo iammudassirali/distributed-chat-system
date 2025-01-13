@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: message-service
+  namespace: chat-system
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: message-service
+  template:
+    metadata:
+      labels:
+        app: message-service
+    spec:
+      containers:
+      - name: message-service
+        image: message-service  # Replace with the actual Docker image name
+        ports:
+          - containerPort: 5000
+        env:
+          - name: RABBITMQ_HOST
+            value: "rabbitmq"  # Connect to RabbitMQ service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: message-service
+  namespace: chat-system
+spec:
+  selector:
+    app: message-service
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP
