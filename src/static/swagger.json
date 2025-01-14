@@ -1,0 +1,58 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+      "title": "Distributed Chat API",
+      "version": "1.0.0",
+      "description": "API documentation for the Distributed Chat System"
+    },
+    "paths": {
+      "/api/v1/messages": {
+        "get": {
+          "summary": "Retrieve all messages",
+          "operationId": "getMessages",
+          "responses": {
+            "200": {
+              "description": "A list of messages",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "messages": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "example": ["Hello", "Hi there"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "summary": "Post a new message",
+          "operationId": "postMessage",
+          "parameters": [
+            {
+              "name": "message",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "example": "Hello, world!"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Message successfully posted"
+            }
+          }
+        }
+      }
+    }
+  }
+  
